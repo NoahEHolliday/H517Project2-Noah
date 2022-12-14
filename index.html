@@ -14,19 +14,31 @@
             .country:hover {
                 fill:black
             }
+            .flex-container {
+                display: flex;
+            }
         </style>
     </head>
   
     <body>
+        <a href="https://noaheholliday.github.io/H517Project2-Noah/index.html">Vizualization</a>
+        <a href="https://noaheholliday.github.io/H517Project2-Noah/About.html">About Page</a>
+		<a href="https://indiana-my.sharepoint.com/:w:/g/personal/noevholl_iu_edu/EZRLimUL77lNqMpcmJV28moBuzR0GY6qKSYVBQqh8dye6w?e=A65TRf">Documentation</a>.
+        <a href="https://www.youtube.com/watch?v=7dpAh8Mym4o">Demonstration YT Video </a>
+        <br>
+
         <input type="range" min="1" max="793" value="1" class="slider" id="myRange">
         <p id="Date">7/1/2015</p>
-        <div style="width: 700px; height: 500px;">
-            <svg width="600" height="450"></svg>
+        <div class="flex-container">
+            <div style="width: 700px; height: 500px;">
+                <svg width="600" height="450"></svg>
+            </div>
+            <div id="percentages"><svg></svg></div>
         </div>
-
-        <div id="chart">
-        </div>
-        <div id="chart">
+        <div class="flex-container">
+            <div id="chart"><svg></svg></div>
+            <div id="Piechart0"><svg></svg></div>
+            <div id="Piechart2"><svg></svg></div>
         </div>
         <script src="https://d3js.org/d3.v4.js"></script>
         <script src=
@@ -81,15 +93,100 @@
             }
 
             function UpdateVisualizations() {
-                drawTreeMap()
-                drawAverages()
+                drawBarGraph()
+                drawPieGraph(0)
+                drawPieGraph(2)
+                DrawAverages()
             }
 
-            function drawAverages() {
+            function drawPieGraph(column) {
+                var CurrentData2 = [];
+                let key = column
+
+                var chartselect = '#Piechart' + column
+
+                var getAngle = function (d) {
+                    return (180 / Math.PI * (d.startAngle + d.endAngle) / 2 - 90);
+                };
+
+                CurrentData.forEach((x)=>{
+                    if(CurrentData2.some((val)=>{ return val[key] == x[key] })){
+                        
+                        CurrentData2.forEach((k)=>{
+                            if(k[key] === x[key]){ 
+                            k["occurrence"]++
+                            }
+                        })
+                            
+                        } else {
+                            let a = {}
+                            a[key] = x[key]
+                            a["occurrence"] = 1
+                            CurrentData2.push(a);
+                        }
+                });
+
+                var FlattenedData = []
+                var i = 0
+                CurrentData2.forEach((x) => {
+                    console.log(x)
+                    var category = x[column]
+                    var occurrences = x.occurrence
+                    var pair = [i, category, occurrences]       
+                    i++
+                    FlattenedData.push(pair)
+                })
+
+                d3.select(chartselect).select('svg').selectAll("g").remove()
+
+                var width = 900;
+                var height = 450;
+                var margin = 40
+                var radius = Math.min(width, height) / 2 - margin
+
+                var svg = d3.select(chartselect)
+                    .select('svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .append("g")
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+                var color = ['#20214F','#EC7C26','#922B3E','#AF2B1E','#2D572C','#CDA434','#4D5645','#F5D033'];
+
+                var pie = d3.pie()
+                    .value(function(d) {return d[2]; })
+                var data_ready = pie(d3.entries(CurrentData2))
+
+                var arcGenerator = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(radius)
+
+                svg
+                .selectAll('PieSlices')
+                .data(pie(FlattenedData))
+                .enter()
+                .append('path')
+                    .attr('d', arcGenerator)
+                    .attr('fill', function(d, i){ return color[i] })
+                    .attr("stroke", "black")
+                    .style("stroke-width", "2px")
+                    .style("opacity", 0.7)
+
+                svg
+                .selectAll('PieSlices')
+                .data(pie(FlattenedData))
+                .enter()
+                .append('text')
+                .text(function(d){ return d.data[1] + ' - ' + d.data[2]})
+                .attr("transform", function(d) { return "translate(" + arcGenerator.centroid(d) + ")";  })
+                .style("text-anchor", "middle")
+                .style("font-size", 17)
+
 
             }
 
-            function drawTreeMap() {
+
+            function drawBarGraph() {
 
             var CurrentData2 = [];
             let key = 1
@@ -113,23 +210,19 @@
                     }
                 });
 
-                d3.select('#chart').select('svg').remove()
+                d3.select('#chart').select('svg').selectAll("g").remove()
 
                 var width = 900;
                 var height = 450;
                 var margin = { top: 50, bottom: 50, left: 50, right: 50 };
 
                 var maxy = Math.max.apply(Math, CurrentData2.map(function(o) { return o.occurrence; }))
-                
-                console.log(CurrentData2)
 
                 var svg = d3.select('#chart')
-                .append('svg')
+                .select('svg')
                 .attr('width', width - margin.left - margin.right)
                 .attr('height', height - margin.top - margin.bottom)
                 .attr("viewBox", [0, 0, width, height]);
-
-                svg.selectAll("g").remove()
 
                 var x = d3.scaleBand()
                 .domain(d3.range(CurrentData2.length))
@@ -155,21 +248,65 @@
 
                 function yAxis(g) {
                 g.attr("transform", `translate(${margin.left}, 0)`)
-                    .call(d3.axisLeft(y).ticks(null, data.format))
+                    .call(d3.axisLeft(y).ticks(10))
                     .attr("font-size", '20px')
                 }
 
                 function xAxis(g) {
                 g.attr("transform", `translate(0,${height - margin.bottom})`)
-                    .call(d3.axisBottom(x).tickFormat(i => data[i][1]))
+                    .call(d3.axisBottom(x).tickFormat(i => CurrentData2[i][1]))
                     .attr("font-size", '20px')
                 }
-
+                svg.append("g").call(yAxis);
                 svg.append("g").call(xAxis);
                 svg.node();
             }
                 
+            function DrawAverages() {
+                var width = 450;
+                var height = 450;
 
+                var SummedReserved = 0
+                var SummedGiven = 0
+                var Difference = 0
+                var CountForRooms = 0
+                var Count = 0
+
+                d3.select('#percentages').select('svg').selectAll("g").remove()
+
+                for (var i = 0; i < CurrentData.length; i++) {
+                    if(CurrentData[i][7] != "" || CurrentData[i][8] != "") {
+                        SummedReserved += Number(CurrentData[i][7])
+                        SummedGiven += Number(CurrentData[i][8])
+                        CountForRooms +=1
+                    }
+                    Count += 1
+                }
+
+                var AverageReserved = SummedReserved/CountForRooms
+                var AverageGiven = SummedGiven/CountForRooms
+                var AverageDifference = AverageGiven/AverageReserved
+
+                texthanger = d3.select("#percentages").select('svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .append('g')
+
+
+                    texthanger.append('text')
+                    .text('Count of Bookings: ' + String(Count))
+                    .attr("transform", "translate(0, 20)")
+                    texthanger.append('text')
+                    .text('Average Quality Room Booked: ' + String(AverageReserved))
+                    .attr("transform", "translate(0, 40)")
+                    texthanger.append('text')
+                    .text('Average Quality Room Recieved: ' + String(AverageGiven))
+                    .attr("transform", "translate(0, 60)")
+                    texthanger.append('text')
+                    .text('Average Difference in Quality Room Recieved: ' + String(AverageDifference))
+                    .attr("transform", "translate(0, 80)")
+
+            }
 
             function DrawMap() {
 
