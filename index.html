@@ -65,7 +65,6 @@
 		    }
 
             function UpdateDataSet(Day, Countries) {
-                //emptys global array
                 CurrentData = []
 
                 if(CurrentCountrySelection.length == 0) {
@@ -317,9 +316,6 @@
                 width = +svg.attr("width"),
                 height = +svg.attr("height");
 
-  
-                // Mercator projection
-                // Center(0, 0) with 0 rotation
                 var gfg = d3
                     .geoMercator()
                     .scale(width / 2.5 / Math.PI)
@@ -368,7 +364,6 @@
                 }
             }); 
 
-            //just collect deaths, no need to call another function since it is not drawing.
             d3.csv('./datasets/CleanedHotelData.csv', function(data) 
             {            
                 for (var i = 1; i < data.length; i++) 
